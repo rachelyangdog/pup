@@ -8637,13 +8637,13 @@ enum ApmSamplingRulesActions {
 
 #[derive(Subcommand)]
 enum ApmAdaptiveSamplingActions {
-    /// Get the onboarding status. With `--service` and `--env`, returns one entry; otherwise lists all.
+    /// Get the onboarding status for a (service, env) pair.
     #[command(name = "onboarding-status")]
     OnboardingStatus {
-        #[arg(long, help = "Filter by service name (optional)")]
-        service: Option<String>,
-        #[arg(long, help = "Filter by environment (optional)")]
-        env: Option<String>,
+        #[arg(long, help = "Service name (required)")]
+        service: String,
+        #[arg(long, help = "Environment (required)")]
+        env: String,
     },
     /// Onboard a (service, env) pair to adaptive sampling
     Onboard {
@@ -8680,22 +8680,6 @@ enum ApmAdaptiveSamplingActions {
     },
     /// Check whether the configured allotment is sufficient for current ingestion
     Check,
-    /// Preview the allotment Datadog would compute for a strategy without applying it.
-    /// Provide exactly one of --bytes or --percent.
-    Preview {
-        #[arg(
-            long,
-            conflicts_with = "percent",
-            help = "Monthly target in bytes (strategy=fixed_target)"
-        )]
-        bytes: Option<i64>,
-        #[arg(
-            long,
-            conflicts_with = "bytes",
-            help = "Percent of total monthly allotment (strategy=percent_total)"
-        )]
-        percent: Option<f64>,
-    },
 }
 
 #[derive(Subcommand)]
@@ -14969,12 +14953,6 @@ async fn main_inner() -> anyhow::Result<()> {
                     }
                     ApmAdaptiveSamplingActions::Check => {
                         commands::apm::adaptive_sampling_check(&cfg).await?;
-                    }
-                    ApmAdaptiveSamplingActions::Preview { bytes, percent } => {
-                        if bytes.is_none() && percent.is_none() {
-                            anyhow::bail!("must provide --bytes or --percent");
-                        }
-                        commands::apm::adaptive_sampling_preview(&cfg, bytes, percent).await?;
                     }
                 },
                 ApmActions::ServiceConfig { action } => match action {
